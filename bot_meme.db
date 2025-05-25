@@ -1,0 +1,18 @@
+import sqlite3
+
+conn = sqlite3.connect('project_db.db')
+cursor = conn.cursor()
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS Dogs (
+    meme_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    photo BLOB
+);
+''')
+
+conn.commit()
+
+conn.close()
+
+print("Таблицы и данные успешно добавлены!")
