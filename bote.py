@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 # from dotenv import load_dotenv
 # load_dotenv()
-API_TOKEN = '7228651021:AAF2mFoe0bC0BL5bngUtqvwggkOL2iPNeGM'
+API_TOKEN = ''
 
 conn = sqlite3.connect('bot_meme.db')
 cursor = conn.cursor()
@@ -22,6 +22,7 @@ class Form(StatesGroup):
     role = State()
     name = State()
     meme = State()
+    
 
 role_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -32,19 +33,20 @@ role_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Пивте, это бот منئ ؤتجابغفلائ رفربؤتي لا لاج لاتؤرتىاب", reply_markup=role_kb)
+    await message.answer("Пивте, это бот منئ ؤتجابغفلائ رفرب ؤتي لا لاج لاتؤرتىاب", reply_markup=role_kb)
     await state.set_state(Form.role)
 
 @dp.callback_query(lambda c: c.data in ["Я смотрю мемы", "Я хочу закинуть мемы"])
-async def handle_yes(callback: CallbackQuery, state):
+async def role_choose(callback: CallbackQuery, state):
     print(callback)
     await state.update_data(role=callback)
     await callback.answer()
-    await callback.message.answer("Напиши свой ник/псевдоним")
+    await callback.message.answer("Напиши свой ник")
     await state.set_state(Form.name)
 
-@dp.message(F.text == "/imeme")
-async def find_command_handler(message: Message, state):
+
+async def choose_meme (message: Message, state):
+    await state.update_data(name = message.text)
     await message.answer("Ну что же, теперь отправляй мем.")
     await state.set_state(Form.meme)
 
@@ -60,4 +62,31 @@ async def photo_chose(message: Message, state: FSMContext):
     await message.answer(f"Мем {name} добавлен!")
     await state.clear()
 
+@dp.message(F.text == "/mem")
+async def list_meme(message: Message):
+    cursor.execute("SELECT name, breed FROM Dogs")
+    rows = cursor.fetchall()
 
+    if not rows:
+        await message.answer("В базе пока нет ни одного мема.")
+        return
+
+async def cancel_handler(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Окей, всё сбросил. Напиши /start, чтобы начать заново.", reply_markup=ReplyKeyboardRemove())
+
+async def main():
+    dp.message.register(cmd_start, F.text == "/start")
+    dp.message.register(cancel_handler, F.text == "/cancel")
+    dp.message.register(role_choose, Form.role)
+    dp.message.register(choose_meme, Form.name) 
+    dp.message.register(photo_chose, Form.meme)
+    dp.message.register(list_meme)
+    dp.message.register(cancel_handler)
+    await dp.start_polling(bot)
+    #     role = State()
+    # name = State()
+    # meme = State()
+
+if __name__ == "__main__":
+    asyncio.run(main())
